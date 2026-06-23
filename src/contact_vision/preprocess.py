@@ -7,7 +7,6 @@ import json
 from colorama import Fore, Style, init
 init(autoreset=True)
 
-# OpenPose jsons to npy
 def jsons_to_npy(json_dir: str, pad_value: float = np.nan):
 
     json_paths = sorted(glob.glob(os.path.join(json_dir, '*.json')))
@@ -25,7 +24,7 @@ def jsons_to_npy(json_dir: str, pad_value: float = np.nan):
             js = json.load(f)
         people = js.get('people', [])
         if not people:
-            continue    
+            continue
         coords = np.array(people[0].get('pose_keypoints_2d', []),
                             dtype=np.float32).reshape(-1, 3)
         if coords.shape[0] != n_keypoints:
@@ -33,22 +32,21 @@ def jsons_to_npy(json_dir: str, pad_value: float = np.nan):
             valid = min(coords.shape[0], n_keypoints)
             padded[:valid] = coords[:valid]
             coords = padded
-        
+
         result[i] = coords
 
     return result
 
-# (T, 25, 3) -> (T, 13, 3)
 def get_lower_joints(target_npy):
     lower_idx = [8, 9, 10, 11, 12, 13, 14, 19, 20, 21, 22, 23, 24]
     return target_npy[ : , lower_idx, : ]
 
 def preprocess_lower_joints(lower_joints, conf_threshold=0.3, max_interp_gap=3):
     F, K, _ = lower_joints.shape
-    mask = lower_joints[:, :, 2] > conf_threshold  # (F, 13)
+    mask = lower_joints[:, :, 2] > conf_threshold
 
     pel_mask = mask[:, 0].copy()
-    pel_coord = lower_joints[:, 0, :2].copy()      # (F, 2)
+    pel_coord = lower_joints[:, 0, :2].copy()
 
     valid_idxs = np.where(pel_mask)[0]
     if valid_idxs.size > 0:
@@ -69,7 +67,6 @@ def preprocess_lower_joints(lower_joints, conf_threshold=0.3, max_interp_gap=3):
         pel_coord[last+1:] = pel_coord[last]
         pel_mask[last+1:] = True
 
-    # Transformation (relative coordinate, Pelvis)
     rel_data = lower_joints.astype(float).copy()
     rel_data[:, :, :2] -= pel_coord[:, None, :]
 
@@ -101,20 +98,19 @@ def preprocess_lower_joints(lower_joints, conf_threshold=0.3, max_interp_gap=3):
         mask[:, j] = joint_mask
 
     return rel_data, mask
-        
+
 def main():
     parser = argparse.ArgumentParser(description="OpenPose jsons to .npy")
     parser.add_argument('--input_dir', type=str, required=True, help='OpenPose jsons dir')
     parser.add_argument('--output_path', type=str, required=True, help='Output .npy path')
-    
+
     args = parser.parse_args()
     json_dir = args.input_dir
     output_path = args.output_path
-    
-    # OpenPose jsons -> .npy (T, 25, 3)
+
     output_npy = jsons_to_npy(json_dir)
     print(Fore.GREEN + f'output_npy shape: {output_npy.shape}')
-    
+
     lower_joints = get_lower_joints(output_npy)
     print(Fore.GREEN + f'lower_joints_shape: {lower_joints.shape}')
 
@@ -122,6 +118,6 @@ def main():
     np.save(output_path, processed)
     print(Fore.GREEN + f'lower_joints_processed Done: {lower_joints.shape}')
 
-    
+
 if __name__ == "__main__":
     main()

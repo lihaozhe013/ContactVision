@@ -1,0 +1,30 @@
+[project]
+name = "contact-vision"
+version = "1.0.0"
+description = "从视频中学习脚步接触状态，用于物理合理的步态动画与步态分析"
+authors = [
+    { name = "Daeyong Kim" },
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "torch>=2.0",
+    "numpy>=1.21",
+    "opencv-python>=4.5",
+    "colorama>=0.4",
+]
+
+[project.scripts]
+contactvision-inference = "contact_vision.inference:main"
+contactvision-preprocess = "contact_vision.preprocess:main"
+contactvision-opjson2npy = "contact_vision.opjson2npy:main"
+contactvision-vis-labels = "contact_vision.vis_labels:main"
+contactvision-vis-op = "contact_vision.vis_op:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+# 如果使用本地 PyTorch，可在此添加源配置

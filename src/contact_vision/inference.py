@@ -1,11 +1,5 @@
-'''
-Author: DY Kim
-Date: 25.09.03
-.npy는 pelvis 기준, 상대좌표로 변환된 lower joints가 들어가야 함.(OpenPose 좌표)
-'''
-
 import torch
-from src.model import FootContactTransformer
+from .model import FootContactTransformer
 import numpy as np
 import argparse
 from colorama import Fore, Style, init
@@ -13,7 +7,7 @@ from colorama import Fore, Style, init
 init(autoreset=True)
 
 MODEL_PTH = './checkpoints/best_model.pth'
-DEVICE    = 'cuda' if __import__('torch').cuda.is_available() else 'cpu'
+DEVICE    = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def infer_full_sequence(model, data, seq_len, device):
     model.eval()
@@ -30,17 +24,16 @@ def infer_full_sequence(model, data, seq_len, device):
                 chunk = np.concatenate([chunk, pad], axis=0)
             inp = torch.from_numpy(chunk.astype(np.float32)).unsqueeze(0).to(device)
             logits = model(inp)
-            pred = (torch.sigmoid(logits) > 0.5).cpu().numpy().squeeze(0)  # shape: (4,)
+            pred = (torch.sigmoid(logits) > 0.5).cpu().numpy().squeeze(0)
 
             preds.append(pred)
-    return np.concatenate(preds, axis=0)[:T]  # (T, 4)
+    return np.concatenate(preds, axis=0)[:T]
 
 def load_model(model_path=MODEL_PTH, device=DEVICE):
-    # Load Model
     ckpt = torch.load(model_path, map_location=device, weights_only=True)
     hyper = ckpt['hyperparams']
     input_dim = hyper.get('input_dim', 39)
-    
+
     model = FootContactTransformer(
         input_dim=input_dim,
         embed_dim=hyper['embed_dim'],
@@ -49,29 +42,26 @@ def load_model(model_path=MODEL_PTH, device=DEVICE):
         num_layers=hyper['num_layers'],
         dropout=hyper['dropout']
     ).to(device)
-    
+
     model.load_state_dict(ckpt['model_state'])
     model.eval()
-    
+
     return model
-    
+
 def main():
-    # ArgParse
     parser = argparse.ArgumentParser(description='Runs inference on an input .npy file and saves the result.')
     parser.add_argument('--input_path', type=str, required=True, help='.npy path')
     parser.add_argument('--output_path', type=str, required=True, help='save .npy path')
     parser.add_argument('--model_path', type=str, default=MODEL_PTH)
-    
+
     args = parser.parse_args()
     intput_npy = args.input_path
     output_npy = args.output_path
-    
+
     print(Fore.GREEN + "Load Model")
-    # Load Model
     model = load_model(MODEL_PTH, DEVICE)
-    
-    print(Fore.GREEN + "inference...") 
-    # load npy
+
+    print(Fore.GREEN + "inference...")
     data = np.load(intput_npy)
     pred = infer_full_sequence(model, data, seq_len=128, device=DEVICE)
     np.save(output_npy, pred.astype(np.float32))

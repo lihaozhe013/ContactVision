@@ -2,7 +2,6 @@ import os
 import numpy as np
 import cv2
 
-# joint → OpenPose keypoint index
 JOINT_INDICES = {
     'left_toe': 19,
     'right_toe': 22,
@@ -10,8 +9,6 @@ JOINT_INDICES = {
     'right_heel': 24,
 }
 
-
-#LABEL_ORDER = ['left_heel', 'left_toe', 'right_heel', 'right_toe']
 LABEL_ORDER = ['left_toe', 'right_toe', 'left_heel', 'right_heel']
 
 DEFAULT_COLOR = (0, 0, 255)
@@ -20,9 +17,9 @@ MARKER_RADIUS = 10
 MARKER_THICKNESS = -1
 
 def process_video(video_path: str, pose_npy: str, label_npy: str, output_video: str) -> None:
-    poses = np.load(pose_npy)   # shape (n_frames, 25, 3)
+    poses = np.load(pose_npy)
     poses = np.squeeze(poses)
-    labels = np.load(label_npy) # shape (n_frames, 4)  ← [Rt, Lh, Lt, Rh]
+    labels = np.load(label_npy)
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -42,14 +39,14 @@ def process_video(video_path: str, pose_npy: str, label_npy: str, output_video: 
         if not ret or frame_idx >= poses.shape[0]:
             break
 
-        joints       = poses[frame_idx]   # (25, 3)
-        frame_labels = labels[frame_idx]  # (4,)
+        joints       = poses[frame_idx]
+        frame_labels = labels[frame_idx]
 
         for joint_name, op_idx in JOINT_INDICES.items():
             x, y, c = joints[op_idx]
             if c <= 0:
                 continue
-            
+
             if not (np.isfinite(x) and np.isfinite(y)):
                 continue
 
@@ -70,7 +67,7 @@ def process_video(video_path: str, pose_npy: str, label_npy: str, output_video: 
     print(f"Processed video saved to: {out_path}")
 
 
-if __name__ == '__main__':
+def main():
     import argparse
     parser = argparse.ArgumentParser(
         description='Overlay OpenPose markers on video and highlight based on labels.'
@@ -82,5 +79,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     process_video(args.video, args.pose, args.labels, args.out_path)
-    
 
+
+if __name__ == '__main__':
+    main()

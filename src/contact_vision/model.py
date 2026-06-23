@@ -16,11 +16,11 @@ class FootContactTransformer(nn.Module):
         )
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers)
         self.classifier = nn.Linear(embed_dim, 4)
-        self.dropout = nn.Dropout(dropout) 
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        x = self.input_fc(x) # (Batch, Frames, Dim: 39)
+        x = self.input_fc(x)
         x = x + self.pos_enc[:, :x.size(1)]
         x = self.dropout(x)
         x = self.transformer(x)
-        return (self.classifier(x))  # (Batch, Frames, 4:labels)
+        return self.classifier(x)

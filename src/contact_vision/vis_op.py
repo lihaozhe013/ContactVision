@@ -5,21 +5,16 @@ from colorama import Fore, Style, init
 init(autoreset=True)
 
 def play_video(video_path, npy_path, output_path, save_flag=False):
-    # 1) data load
-    keypoints = np.load(npy_path)  
-    # shape: (n_frames, n_keypoints, 3)
+    keypoints = np.load(npy_path)
 
-    # 2) open video
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"Cannot open video {video_path}")
 
-    # origin video info
     fps    = cap.get(cv2.CAP_PROP_FPS)
     width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    # save option
     out = None
     if save_flag:
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -30,8 +25,8 @@ def play_video(video_path, npy_path, output_path, save_flag=False):
         ret, frame = cap.read()
         if not ret or frame_idx >= keypoints.shape[0]:
             break
-        
-        person = keypoints[frame_idx]  # shape: (25, 3)
+
+        person = keypoints[frame_idx]
         for x, y, c in person:
             if np.isnan(x) or c < 0.1:
                 continue
@@ -60,14 +55,14 @@ def main():
     parser.add_argument('--input_video', type=str, required=True, help='Target Video')
     parser.add_argument('--output_path', type=str, required=False, help='Output Video Path')
     parser.add_argument('--flag', type=int, default=1, help="Not Save: 0, Save: 1")
-    
+
     args = parser.parse_args()
-    
+
     input_npy = args.input_npy
     input_video = args.input_video
     output_path = args.output_path
     flag = args.flag
-    
+
     play_video(input_video, input_npy, output_path, save_flag=flag)
     if flag == 1:
         print(Fore.GREEN + f'Video Save Done: {output_path}')
