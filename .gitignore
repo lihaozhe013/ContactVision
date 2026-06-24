@@ -1,5 +1,6 @@
 output/
 input/
+raw_videos/
 __pycache__/
 *.pyc
 .env
