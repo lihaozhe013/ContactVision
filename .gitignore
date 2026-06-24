@@ -1,4 +1,5 @@
 output/
+input/
 __pycache__/
 *.pyc
 .env
@@ -7,7 +8,3 @@ venv/
 *.egg-info/
 dist/
 build/
-openpose_output/
-pred_test.npy
-processed_test.npy
-test.mp4
